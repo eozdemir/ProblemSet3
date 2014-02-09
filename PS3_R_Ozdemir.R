@@ -1,9 +1,10 @@
 #Problem Set 3
 rm(list = ls()) #clear the workspace
-install.packages("plyr")
+install.packages(c("plyr", "doMC", "multicore", "foreach"))
 library(plyr)
-library(abind)
-library(foreign)
+library(doMC)
+library(multicore)
+library(foreach)
 
 ## Section A: Sampling distributions and p-values
 
@@ -25,7 +26,7 @@ dim(yres) #Check output is a 20 by 1000 array
 ## 3) Run 1000 regressions. Output a 1000 by 6 matrix of estimated regression coefficients
 #Create a list by running 1000 times
 #Function runs the regressions and gets the summary statistics by taking the coefficients
-coefficient.m<- lapply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,1])
+coefficient.m<- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,1])
 coefficient.m<- unlist(coefficient.m) #unlist before transpose
 coefficient.m<- t(array(coefficient.m, dim=c(6,1000))) #make an array and transpose to get right dimensions
 dim(coefficient.m)
@@ -42,7 +43,7 @@ plot(density(coefficient.m[,6]), xlim=c(min(coefficient.m[,6]), max(coefficient.
 
 ## 5) Collect t-statistics for all 1000 regressions for all 6 coefficients
 #Use the same lapply function to get the t-statistics of regressions
-t.stats<- lapply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3])
+t.stats<- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3])
 t.stats<- unlist(t.stats) #same process
 t.stats<- t(array(t.stats, dim=c(6, 1000)))
 dim(t.stats)
@@ -53,3 +54,23 @@ head(t.stats)
 t.value<- qt(0.975,14)
 significance<- abs(t.stats)>abs(t.value)
 length(which(significance))
+t.stat.df<- data.frame(t.stats) #Turned into df to reach each column seperately
+significance1<- abs(t.stat.df$X1)>abs(t.value)
+s1<- length(which(significance2)) #number of significance for 1st variable
+significance2<- abs(t.stat.df$X2)>abs(t.value)
+s2<- length(which(significance2)) #number of significance for 2nd variable
+significance3<- abs(t.stat.df$X3)>abs(t.value)
+s3<- length(which(significance3)) #number of significance for 3rd variable
+significance4<- abs(t.stat.df$X4)>abs(t.value)
+s4<- length(which(significance4)) #number of significance for 4th variable
+significance5<- abs(t.stat.df$X5)>abs(t.value)
+s5<- length(which(significance5)) #number of significance for 5th variable
+significance6<- abs(t.stat.df$X6)>abs(t.value)
+s6<- length(which(significance6)) #number of significance for 6th variable
+
+## 7) Re-run the code in parallel and estimate how much time is saved.
+# Used one of laply() functions to see if parallel makes a difference
+system.time(out <- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3]))
+registerDoMC(cores=8) #Creates 8 (his) instances of R and divides amongst, need before parallel
+system.time(out2 <- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3]))
+##Parallel is slightly more efficient, but not really different
