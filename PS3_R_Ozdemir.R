@@ -56,17 +56,17 @@ significance<- abs(t.stats)>abs(t.value)
 length(which(significance))
 t.stat.df<- data.frame(t.stats) #Turned into df to reach each column seperately
 significance1<- abs(t.stat.df$X1)>abs(t.value)
-s1<- length(which(significance2)) #number of significance for 1st variable
+s1<- length(which(significance2)) #number of significance for intercept
 significance2<- abs(t.stat.df$X2)>abs(t.value)
-s2<- length(which(significance2)) #number of significance for 2nd variable
+s2<- length(which(significance2)) #number of significance for 1st coefficient
 significance3<- abs(t.stat.df$X3)>abs(t.value)
-s3<- length(which(significance3)) #number of significance for 3rd variable
+s3<- length(which(significance3)) #number of significance for 2nd coefficient
 significance4<- abs(t.stat.df$X4)>abs(t.value)
-s4<- length(which(significance4)) #number of significance for 4th variable
+s4<- length(which(significance4)) #number of significance for 3rd coefficient
 significance5<- abs(t.stat.df$X5)>abs(t.value)
-s5<- length(which(significance5)) #number of significance for 5th variable
+s5<- length(which(significance5)) #number of significance for 4th coefficient
 significance6<- abs(t.stat.df$X6)>abs(t.value)
-s6<- length(which(significance6)) #number of significance for 6th variable
+s6<- length(which(significance6)) #number of significance for 5th coefficient
 
 ## 7) Re-run the code in parallel and estimate how much time is saved.
 # Used one of laply() functions to see if parallel makes a difference
