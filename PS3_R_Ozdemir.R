@@ -82,4 +82,36 @@ registerDoMC(cores=8) #Creates 8 (his) instances of R and divides amongst, need 
 system.time(code2 <- laply(1:1000, function(i) coef(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))))
 ##Parallel is not really different in my case, I also tried with 4 cores.
 
+## Section B: Calculating Fit Statistics
 
+## 1) 
+##Read the incumbent data in first
+##I downloaded it to my computer since the url linking function gave warning 
+getwd()
+setwd("/Users/elifozdemir/Desktop/WashU 1.2/R Programming/Problem Sets/ProblemSet3")
+inc.data<- read.table("incumbents.txt", header=TRUE, sep="\t", row.names=1, stringsAsFactors=FALSE) 
+head(inc.data)
+n<- nrow(inc.data)
+S <- sample (1:n, n/2) #randomly split to 2
+training<- inc.data[S,] #first part is the training set
+test<- inc.data[-S,] #rest is the test set
+head(training)
+head(test)
+##Build 3 statistical models where vote share is the dependent variable
+mod1<- lm(training$voteshare~training$incspend)
+mod2<- lm(training$voteshare~training$unemployed)
+mod3<- lm(training$voteshare~training$seniority)
+##see the output of the regressions
+summary(mod1)
+summary(mod2)
+summary(mod3)
+##use these models to make predictions in test data
+##I had to drop one of the observations in test data because two datasets' number of observations didn't match
+nrow(test)
+i<- sample(nrow(test), 1) #random observation to drop :(
+test<- test[-i,] #not lucky i
+nrow(test) #check
+pred1<- summary(predict(mod1, newdata=test))
+pred2<- summary(predict(mod2, newdata=test))
+pred3<- summary(predict(mod3, newdata=test))  
+  
