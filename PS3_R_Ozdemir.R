@@ -121,7 +121,7 @@ summary(pred3)
 ## 2) Write a function for fit statistics matrix
 ##First I need a vector of naive forecasts
 mod.naive<- lm(training$voteshare~1) #A regression with just a constant as you suggested
-#I don't know why but it only worked with 1 as the constant
+##I don't know why but it only worked with 1 as the constant
 pred.naive<- predict(mod.naive, newdata=test) #predict on test dataset
 is.vector(pred.naive) #check if it is vector as the question asks
 ##Second I need a matrix of predictors where each column is one of our models
@@ -136,7 +136,7 @@ abs.per.err<- abs.err/(abs(outcomes)*100) #a_i
 base<- abs(pred.naive-outcomes) #b_i
 N<- nrow(test)
 
-#The function
+##The function
 fit.stats<- function(y=outcomes, P=pred.mat, r=pred.naive){
   RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
   MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
@@ -149,3 +149,75 @@ fit.stats<- function(y=outcomes, P=pred.mat, r=pred.naive){
 }
 head(fit.stats()) #first 6 rows of the matrix I stored the statistics in column-wise for each observation in our dataset
 
+##3) Write tests
+##Ensure that user can choose which fit statistics are calculated
+##For this we need to create a new function with the same idea but the user should assign TRUE to the statistic he/she wants to be calculated when calling the function
+fit.stats.option<- function(y=outcomes,P=pred.mat,r=pred.naive,RMSE=FALSE,MAD=FALSE,RMSLE=FALSE,MAPE=FALSE,MEAPE=FALSE,MRAE=FALSE){
+  if(RMSE==TRUE){
+    RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
+  }else{
+    RMSE<- NULL
+  }
+  if(MAD==TRUE){
+    MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
+  }else{
+    MAD<- NULL
+  }
+  if(RMSLE==TRUE){
+    RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2, na.rm=TRUE)/2))
+  }else{
+    RMSLE<- NULL
+  }
+  if(MAPE==TRUE){
+    MAPE<-  laply(1:N, function(i) sum(abs.per.err, na.rm=TRUE)/N)
+  }else{
+    MAPE<- NULL
+  }
+  if(MEAPE==TRUE){
+    MEAPE<- laply(1:N, function(i) median(abs.per.err, na.rm=TRUE))
+  }else{
+    MEAPE<- NULL
+  }
+  if(MRAE==TRUE){
+    MRAE<-  laply(1:N, function(i) median(abs.err/base, na.rm=TRUE))
+  }else{
+    MRAE<- NULL
+  }
+  output2<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE,MRAE)
+  return(output2)
+}
+head(fit.stats.option(MAPE=TRUE,MRAE=TRUE)) #try only specifiying two of the statistics
+head(fit.stats.option()) #if we don't specify anything function returns full since the default arguments specify all of them as FALSE
+
+##The function still works if the baseline model is not provided
+##It is exactly the same function without baseline model defined inside
+fit.stats.option2<- function(y=outcomes,P=pred.mat,r=pred.naive,RMSE=FALSE,MAD=FALSE,RMSLE=FALSE,MAPE=FALSE,MEAPE=FALSE,MRAE=FALSE){
+  if(RMSE==TRUE){
+    RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
+  }else{
+    RMSE<- NULL
+  }
+  if(MAD==TRUE){
+    MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
+  }else{
+    MAD<- NULL
+  }
+  if(RMSLE==TRUE){
+    RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2, na.rm=TRUE)/2))
+  }else{
+    RMSLE<- NULL
+  }
+  if(MAPE==TRUE){
+    MAPE<-  laply(1:N, function(i) sum(abs.per.err, na.rm=TRUE)/N)
+  }else{
+    MAPE<- NULL
+  }
+  if(MEAPE==TRUE){
+    MEAPE<- laply(1:N, function(i) median(abs.per.err, na.rm=TRUE))
+  }else{
+    MEAPE<- NULL
+  }
+  output3<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE)
+  return(output3)
+}
+head(fit.stats.option2(MAPE=TRUE,MRAE=TRUE)) #and it still works 
