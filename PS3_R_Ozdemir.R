@@ -138,13 +138,14 @@ N<- nrow(test)
 
 #The function
 fit.stats<- function(y=outcomes, P=pred.mat, r=pred.naive){
-  RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err)/N))
-  MAD<-   laply(1:N, function(i) median(abs.err))
-  RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2)/2))
-  MAPE<-  laply(1:N, function(i) sum(abs.per.err)/N)
-  MEAPE<- laply(1:N, function(i) median(abs.per.err))
-  MRAE<-  laply(1:N, function(i) median(abs.err/base))
+  RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
+  MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
+  RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2, na.rm=TRUE)/2))
+  MAPE<-  laply(1:N, function(i) sum(abs.per.err, na.rm=TRUE)/N)
+  MEAPE<- laply(1:N, function(i) median(abs.per.err, na.rm=TRUE))
+  MRAE<-  laply(1:N, function(i) median(abs.err/base, na.rm=TRUE))
   output<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE,MRAE)
   return(output)
 }
-head(fit.stats()) #something wrong/everything is NA now/will come back
+head(fit.stats()) #first 6 rows of the matrix I stored the statistics in column-wise for each observation in our dataset
+
