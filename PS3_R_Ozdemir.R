@@ -4,14 +4,13 @@ install.packages(c("plyr", "doMC", "multicore", "foreach"))
 library(plyr)
 library(doMC)
 library(multicore)
-library(foreach)
 
 ## Section A: Sampling distributions and p-values
 
 ## 1) Create an array with dim=c(20,5,1000) and filled it with random data
 my.array <- array(data = rnorm(n=100*1000), dim=c(20,5, 1000)) #array with random data
 dim(my.array) #has right dimensions
-head(my.array) #see how it looks like
+str(my.array) #understand how it looks like
 
 ## 2) Make a function to create Y values that are the linear combination of the X's plus normally distributed error. 
 Beta <- matrix(c(1,2,0,4,0), ncol=1)
@@ -22,11 +21,13 @@ yfun<- function(x, Beta){
 yresults <- aaply(.data=my.array, .margins=3, .fun=yfun, Beta=Beta) #Runs the function for the third dimension. 
 yres <- t(yresults) #Transpose the y values created to get the right dimensions
 dim(yres) #Check output is a 20 by 1000 array
+str(yres)
 
 ## 3) Run 1000 regressions. Output a 1000 by 6 matrix of estimated regression coefficients
-#Create a list by running 1000 times
+#Create a list by running regression 1000 times on 5 variables in our array 
 #Function runs the regressions and gets the summary statistics by taking the coefficients
-coefficient.m<- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,1])
+coefficient.m<- laply(1:1000, function(i) coef(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))) #reach to coefficient matrix of lm
+str(coefficient.m)                  
 coefficient.m<- unlist(coefficient.m) #unlist before transpose
 coefficient.m<- t(array(coefficient.m, dim=c(6,1000))) #make an array and transpose to get right dimensions
 dim(coefficient.m)
@@ -43,7 +44,7 @@ plot(density(coefficient.m[,6]), xlim=c(min(coefficient.m[,6]), max(coefficient.
 
 ## 5) Collect t-statistics for all 1000 regressions for all 6 coefficients
 #Use the same lapply function to get the t-statistics of regressions
-t.stats<- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3])
+t.stats<- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3]) #i don't know if there is any other way of getting t statistics easily, i found this ($coefficient[,3]) online
 t.stats<- unlist(t.stats) #same process
 t.stats<- t(array(t.stats, dim=c(6, 1000)))
 dim(t.stats)
@@ -51,26 +52,34 @@ head(t.stats)
 
 ## 6) Calculate how many t-statistics are statistically significant for each variable
 #We have 20 observations, and 5 covariates. This gives us 14 degrees of freedom. We need to calculate the values of a t-distribution by using the 0.975 quantile (since we want significance p<=0.05) by using the qt() function. 
-t.value<- qt(0.975,14)
-significance<- abs(t.stats)>abs(t.value)
-length(which(significance))
+t.value<- qt(0.975,14) #the critical value
+significance<- abs(t.stats)>abs(t.value) #if our statistics is larger than the critical value, it is significant
+length(which(significance)) #how many of them are significant
 t.stat.df<- data.frame(t.stats) #Turned into df to reach each column seperately
 significance1<- abs(t.stat.df$X1)>abs(t.value)
-s1<- length(which(significance2)) #number of significance for intercept
+s1<- length(which(significance1)) 
+s1 #number of significant t-values for intercept
 significance2<- abs(t.stat.df$X2)>abs(t.value)
-s2<- length(which(significance2)) #number of significance for 1st coefficient
+s2<- length(which(significance2)) 
+s2 #number of significant t-values for 1st coefficient
 significance3<- abs(t.stat.df$X3)>abs(t.value)
-s3<- length(which(significance3)) #number of significance for 2nd coefficient
+s3<- length(which(significance3)) 
+s3 ##number of significant t-values for 2nd coefficient
 significance4<- abs(t.stat.df$X4)>abs(t.value)
-s4<- length(which(significance4)) #number of significance for 3rd coefficient
+s4<- length(which(significance4)) 
+s4 #number of significant t-values for 3rd coefficient
 significance5<- abs(t.stat.df$X5)>abs(t.value)
-s5<- length(which(significance5)) #number of significance for 4th coefficient
+s5<- length(which(significance5)) 
+s5 #number of significant t-values for 4th coefficient
 significance6<- abs(t.stat.df$X6)>abs(t.value)
-s6<- length(which(significance6)) #number of significance for 5th coefficient
+s6<- length(which(significance6)) 
+s6 #number of significant t-values for 5th coefficient
 
 ## 7) Re-run the code in parallel and estimate how much time is saved.
 # Used one of laply() functions to see if parallel makes a difference
-system.time(out <- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3]))
+system.time(code1 <- laply(1:1000, function(i) coef(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))))
 registerDoMC(cores=8) #Creates 8 (his) instances of R and divides amongst, need before parallel
-system.time(out2 <- laply(1:1000, function(i) summary(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))$coefficient[,3]))
-##Parallel is slightly more efficient, but not really different
+system.time(code2 <- laply(1:1000, function(i) coef(lm(yres[,i]~my.array[,1,i]+my.array[,2,i]+my.array[,3,i]+my.array[,4,i]+my.array[,5,i]))))
+##Parallel is not really different in my case, I also tried with 4 cores.
+
+
