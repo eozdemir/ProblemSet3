@@ -111,7 +111,40 @@ nrow(test)
 i<- sample(nrow(test), 1) #random observation to drop :(
 test<- test[-i,] #not lucky i
 nrow(test) #check
-pred1<- summary(predict(mod1, newdata=test))
-pred2<- summary(predict(mod2, newdata=test))
-pred3<- summary(predict(mod3, newdata=test))  
-  
+pred1<- (predict(mod1, newdata=test))
+pred2<- (predict(mod2, newdata=test))
+pred3<- (predict(mod3, newdata=test))
+summary(pred1)
+summary(pred2)
+summary(pred3)
+
+## 2) Write a function for fit statistics matrix
+##First I need a vector of naive forecasts
+mod.naive<- lm(training$voteshare~1) #A regression with just a constant as you suggested
+#I don't know why but it only worked with 1 as the constant
+pred.naive<- predict(mod.naive, newdata=test) #predict on test dataset
+is.vector(pred.naive) #check if it is vector as the question asks
+##Second I need a matrix of predictors where each column is one of our models
+pred.mat<- cbind(pred1,pred2,pred3)
+is.matrix(pred.mat) #check if it is a matrix as the question asks
+##Lastly we need a vector of true observed outcomes (y)
+outcomes<- training$voteshare 
+is.vector(outcomes) #check if it is vector as the question asks
+##Before going into the function, I need to calculate the error terms etc.
+abs.err<- abs(pred.mat-outcomes) #e_i
+abs.per.err<- abs.err/(abs(outcomes)*100) #a_i
+base<- abs(pred.naive-outcomes) #b_i
+N<- nrow(test)
+
+#The function
+fit.stats<- function(y=outcomes, P=pred.mat, r=pred.naive){
+  RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err)/N))
+  MAD<-   laply(1:N, function(i) median(abs.err))
+  RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2)/2))
+  MAPE<-  laply(1:N, function(i) sum(abs.per.err)/N)
+  MEAPE<- laply(1:N, function(i) median(abs.per.err))
+  MRAE<-  laply(1:N, function(i) median(abs.err/base))
+  output<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE,MRAE)
+  return(output)
+}
+head(fit.stats()) #something wrong/everything is NA now/will come back
