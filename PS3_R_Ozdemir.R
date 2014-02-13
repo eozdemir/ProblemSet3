@@ -130,94 +130,146 @@ is.matrix(pred.mat) #check if it is a matrix as the question asks
 ##Lastly we need a vector of true observed outcomes (y)
 outcomes<- training$voteshare 
 is.vector(outcomes) #check if it is vector as the question asks
-##Before going into the function, I need to calculate the error terms etc.
-abs.err<- abs(pred.mat-outcomes) #e_i
-abs.per.err<- abs.err/(abs(outcomes)*100) #a_i
-base<- abs(pred.naive-outcomes) #b_i
+#N is the number of observations in my test dataset
 N<- nrow(test)
 
 ##The function
 fit.stats<- function(y=outcomes, P=pred.mat, r=pred.naive){
-  RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
-  MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
-  RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2, na.rm=TRUE)/2))
-  MAPE<-  laply(1:N, function(i) sum(abs.per.err, na.rm=TRUE)/N)
-  MEAPE<- laply(1:N, function(i) median(abs.per.err, na.rm=TRUE))
-  MRAE<-  laply(1:N, function(i) median(abs.err/base, na.rm=TRUE))
+  ##RMSE calculation
+  RMSE <-   apply(P, 2, function(P){
+    sqrt(sum(abs(P-y)^2, na.rm=TRUE)/N)
+  })  
+  ##MAD calculation                
+  MAD  <-   apply(P, 2, function(P){
+    median(abs(P-y), na.rm=TRUE)
+  })
+  ##RMSLE calculation
+  RMSLE<-   apply(P, 2, function(P){
+    sqrt(sum((log(P+1)-log(y+1))^2, na.rm=TRUE)/2)
+  })   
+  ##MAPE calculation
+  MAPE <-   apply(P, 2, function(P){
+    sum(abs(P-y)/(abs(y)*100), na.rm=TRUE)/N
+  })
+  ##MEAPE calculation
+  MEAPE<-   apply(P, 2, function(P){
+    median(abs(P-y)/(abs(y)*100), na.rm=TRUE)
+  })
+  ##MRAE calculation
+  MRAE<-    apply(P, 2, function(P){
+    median(abs(P-y)/abs(r-y), na.rm=TRUE)
+  })   
+  ##output matrix
   output<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE,MRAE)
+  row.names(output)<- c("Model 1", "Model 2", "Model 3")
   return(output)
 }
-head(fit.stats()) #first 6 rows of the matrix I stored the statistics in column-wise for each observation in our dataset
+fit.stats() #the matrix I stored the statistics in column-wise for each model
 
 ##3) Write tests
 ##Ensure that user can choose which fit statistics are calculated
 ##For this we need to create a new function with the same idea but the user should assign TRUE to the statistic he/she wants to be calculated when calling the function
 fit.stats.option<- function(y=outcomes,P=pred.mat,r=pred.naive,RMSE=FALSE,MAD=FALSE,RMSLE=FALSE,MAPE=FALSE,MEAPE=FALSE,MRAE=FALSE){
   if(RMSE==TRUE){
-    RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
+    RMSE <-   apply(P, 2, function(P){
+      sqrt(sum(abs(P-y)^2, na.rm=TRUE)/N)
+    })
   }else{
     RMSE<- NULL
   }
   if(MAD==TRUE){
-    MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
+    MAD  <-   apply(P, 2, function(P){
+      median(abs(P-y), na.rm=TRUE)
+    })
   }else{
     MAD<- NULL
   }
   if(RMSLE==TRUE){
-    RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2, na.rm=TRUE)/2))
+    RMSLE<-   apply(P, 2, function(P){
+      sqrt(sum((log(P+1)-log(y+1))^2, na.rm=TRUE)/2)
+    })
   }else{
     RMSLE<- NULL
   }
   if(MAPE==TRUE){
-    MAPE<-  laply(1:N, function(i) sum(abs.per.err, na.rm=TRUE)/N)
+    MAPE <-   apply(P, 2, function(P){
+      sum(abs(P-y)/(abs(y)*100), na.rm=TRUE)/N
+    })
   }else{
     MAPE<- NULL
   }
   if(MEAPE==TRUE){
-    MEAPE<- laply(1:N, function(i) median(abs.per.err, na.rm=TRUE))
+    MEAPE<-   apply(P, 2, function(P){
+      median(abs(P-y)/(abs(y)*100), na.rm=TRUE)
+    })
   }else{
     MEAPE<- NULL
   }
   if(MRAE==TRUE){
-    MRAE<-  laply(1:N, function(i) median(abs.err/base, na.rm=TRUE))
+    MRAE<-    apply(P, 2, function(P){
+      median(abs(P-y)/abs(r-y), na.rm=TRUE)
+    }) 
   }else{
     MRAE<- NULL
   }
   output2<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE,MRAE)
   return(output2)
 }
-head(fit.stats.option(MAPE=TRUE,MRAE=TRUE)) #try only specifiying two of the statistics
-head(fit.stats.option()) #if we don't specify anything function returns full since the default arguments specify all of them as FALSE
+fit.stats.option(MAPE=TRUE,MRAE=TRUE) #try only specifiying two of the statistics
+fit.stats.option() #if we don't specify anything function returns full since the default arguments specify all of them as FALSE
 
 ##The function still works if the baseline model is not provided
 ##It is exactly the same function without baseline model defined inside
 fit.stats.option2<- function(y=outcomes,P=pred.mat,r=pred.naive,RMSE=FALSE,MAD=FALSE,RMSLE=FALSE,MAPE=FALSE,MEAPE=FALSE,MRAE=FALSE){
   if(RMSE==TRUE){
-    RMSE<-  laply(1:N, function(i) sqrt(sum(abs.err*abs.err, na.rm=TRUE)/N))
+    RMSE <-   apply(P, 2, function(P){
+      sqrt(sum(abs(P-y)^2, na.rm=TRUE)/N)
+    })
   }else{
     RMSE<- NULL
   }
   if(MAD==TRUE){
-    MAD<-   laply(1:N, function(i) median(abs.err, na.rm=TRUE))
+    MAD  <-   apply(P, 2, function(P){
+      median(abs(P-y), na.rm=TRUE)
+    })
   }else{
     MAD<- NULL
   }
   if(RMSLE==TRUE){
-    RMSLE<- laply(1:N, function(i) sqrt(sum((log(pred.mat+1)-log(outcomes+1))^2, na.rm=TRUE)/2))
+    RMSLE<-   apply(P, 2, function(P){
+      sqrt(sum((log(P+1)-log(y+1))^2, na.rm=TRUE)/2)
+    })
   }else{
     RMSLE<- NULL
   }
   if(MAPE==TRUE){
-    MAPE<-  laply(1:N, function(i) sum(abs.per.err, na.rm=TRUE)/N)
+    MAPE <-   apply(P, 2, function(P){
+      sum(abs(P-y)/(abs(y)*100), na.rm=TRUE)/N
+    })
   }else{
     MAPE<- NULL
   }
   if(MEAPE==TRUE){
-    MEAPE<- laply(1:N, function(i) median(abs.per.err, na.rm=TRUE))
+    MEAPE<-   apply(P, 2, function(P){
+      median(abs(P-y)/(abs(y)*100), na.rm=TRUE)
+    })
   }else{
     MEAPE<- NULL
+  }
+  if(MRAE==TRUE){
+    MRAE<-    apply(P, 2, function(P){
+      median(abs(P-y)/abs(r-y), na.rm=TRUE)
+    }) 
+  }else{
+    MRAE<- NULL
   }
   output3<- cbind(RMSE,MAD,RMSLE,MAPE,MEAPE)
   return(output3)
 }
-head(fit.stats.option2(MAPE=TRUE,MRAE=TRUE)) #and it still works 
+fit.stats.option2(MAPE=TRUE,MRAE=TRUE) #and it still works
+
+##4) Evaluate the accuracy of models you fit above using the test set
+fit.stats() #call our function to evaluate fit statistics it provides
+##According to the predictions, my first model seems to fit best, since all the error statistics calculated are smaller for the Model 1. Hence, incumbents' spending provides a better model to predict the vote share of incumbent, compared to other models that try to explain incumbent's vote share with unemployment and seniority.
+
+
